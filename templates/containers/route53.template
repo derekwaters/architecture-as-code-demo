@@ -1,0 +1,81 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: create-route53-dns
+  title: Create an AWS Route 53 DNS Entry
+  description: Create a new CRA website project
+  tags:
+    - react
+    - cra
+spec:
+  owner: web@example.com
+  type: dns
+  parameters:
+    - title: Provide route53 configuration information
+      required:
+        - dns_zone
+        - dns_name
+        - elb_dns_name
+        - elb_zone_id
+        - some_aws_auth
+      properties:
+        dns_zone:
+          title: Route53 DNS Zone
+          type: string
+          description: The DNS Zone for the Route53 DNS Entry
+          my_tag: should_be_internally_generated
+        dns_name:
+          title: Route53 DNS Host Name
+          type: string
+          description: The top level DNS name for the new application
+          my_tag: should be app-derived? eg. "base_fqdn + app_name_slug"
+        elb_dns_name:
+          title: Elastic Load Balancer Hostname
+          type: string
+          description: The FQDN for the Elastic Load Balancer that this DNS entry points traffic to
+          my_tag: should be internally derived - "elb. + dns_name"
+        elb_zone_id:
+          title: Elastic Load Balancer Zone Id
+          type: string
+          description: Dunno
+        some_aws_auth:
+          title: AWS Auth Details
+          type: string
+          description: Should be managed behind the scenes by RHDH scaffolder
+  steps:
+    - id: template
+      name: Fetch Skeleton + Template
+      action: fetch:template
+      input:
+        url: ./skeleton
+        copyWithoutRender:
+          - .github/workflows/*
+        values:
+          component_id: ${{ parameters.component_id }}
+          description: ${{ parameters.description }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+          owner: ${{ parameters.owner }}
+
+    - id: publish
+      name: Publish
+      action: publish:github
+      input:
+        allowedHosts:
+          - github.com
+        description: This is ${{ parameters.component_id }}
+        repoUrl: ${{ parameters.repoUrl }}
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: "/catalog-info.yaml"
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

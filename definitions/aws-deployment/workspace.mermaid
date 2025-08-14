@@ -1,0 +1,27 @@
+C4Deployment
+title Amazon Web Services Example
+
+Deployment_Node(live, "Live") {
+    Deployment_Node(aws, "Amazon Web Services") {
+        Deployment_Node(region, "US-East-1") {
+            Container(dns, "DNS Router", "Route 53")
+            Container(lb, "Elastic Load Balancer", "XXXX")
+
+            Deployment_Node(asg, "Autoscaling Group") {
+                Deployment_Node(ec2, "Amazon EC2 - Ubuntu Server") {
+                    Container(wa, "Web Application Instance")
+                }
+            }
+
+            Deployment_Node(db, "Amazon RDS") {
+                Deployment_Node(mysql, "MySQL RDS") {
+                    Container(dbi, "Database Schema")
+                }
+            }
+        }
+    }
+}
+
+Rel(dns, lb, "Forwards Requests To", "HTTPS")
+Rel(lb, wa, "Forwards Requests To", "HTTPS")
+Rel(wa, dbi, "Reads from and writes to", "MySQL Protocol/SSL")
